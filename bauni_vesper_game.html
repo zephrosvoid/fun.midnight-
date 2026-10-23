@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bauni Vesper — Tiny Height, Huge Rage</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@400;600;700&display=swap');
+:root{--pink:#ff4f9a;--violet:#9c6bff;--cyan:#65f3ff;--ink:#090814}
+*{box-sizing:border-box}body{margin:0;background:var(--ink);color:#fff;font-family:Rajdhani, sans-serif;overflow:hidden}
+#game{display:block;width:100vw;height:100vh;background:#0b0920}
+.hud{position:fixed;inset:0;pointer-events:none;padding:18px;display:flex;flex-direction:column;justify-content:space-between}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.brand{font:900 clamp(18px,3vw,30px) Orbitron,sans-serif;letter-spacing:2px;text-shadow:0 0 18px #ff4f9a}.brand span{color:var(--pink)}.subtitle{font-size:14px;color:#c9c5e8;letter-spacing:3px}
+.panel{background:#100d25c9;border:1px solid #ffffff26;backdrop-filter:blur(8px);padding:10px 13px;border-radius:12px;min-width:170px}
+.label{font:600 11px Orbitron,sans-serif;letter-spacing:1.5px;color:#c4bce8;margin-bottom:6px}
+.bar{height:10px;background:#312b4c;border-radius:99px;overflow:hidden;margin:4px 0 8px}.fill{height:100%;width:100%;transition:width .2s;background:linear-gradient(90deg,#ff477e,#ff9bca);box-shadow:0 0 12px #ff4f9a}
+.energy{background:linear-gradient(90deg,#865bff,#65f3ff)}
+.stats{font:600 13px Orbitron,sans-serif;color:#eee}
+.bottom{display:flex;align-items:end;justify-content:space-between;gap:12px}.controls,.hint{background:#100d25c9;border:1px solid #ffffff26;border-radius:12px;padding:10px 13px;color:#d6d0f1;font-size:15px}
+kbd{font:600 12px Orbitron,sans-serif;border:1px solid #625a87;background:#211b3b;border-radius:5px;padding:3px 6px;color:white}
+#dialogue{position:fixed;left:50%;top:70%;transform:translate(-50%,-50%);font:900 clamp(22px,4vw,44px) Orbitron,sans-serif;text-align:center;color:white;text-shadow:0 0 8px #ff4f9a,0 0 25px #ff4f9a;opacity:0;pointer-events:none;width:90%;transition:opacity .15s}
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#21103dcc,#070610f2);padding:20px}
+.card{width:min(560px,95vw);border:1px solid #ff7ab7a8;background:#110d25eF;border-radius:22px;padding:28px;text-align:center;box-shadow:0 0 70px #ff4f9a24}
+h1{font:900 clamp(30px,6vw,56px) Orbitron,sans-serif;line-height:1.1;margin:8px 0 12px}h1 em{font-style:normal;color:var(--pink)}.card p{font-size:19px;color:#d4cee9;line-height:1.4}
+button{pointer-events:auto;border:0;border-radius:10px;padding:13px 20px;background:linear-gradient(100deg,#ff4f9a,#9465ff);color:#fff;font:800 13px Orbitron,sans-serif;letter-spacing:1px;cursor:pointer;box-shadow:0 8px 24px #ff4f9a30}button:hover{filter:brightness(1.15);transform:translateY(-1px)}.secondary{background:#211b3b;border:1px solid #61547f;box-shadow:none}
+.btnrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}.small{font-size:13px!important;color:#a9a2c8!important}.hide{display:none!important}
+#toast{position:fixed;top:22%;left:50%;transform:translateX(-50%);background:#17112e;border:1px solid #ff4f9a;padding:9px 15px;border-radius:9px;font:700 12px Orbitron,sans-serif;opacity:0;transition:opacity .2s;pointer-events:none}
+@media(max-width:600px){.hud{padding:10px}.panel{min-width:135px;padding:8px}.controls{max-width:70%;font-size:13px}.hint{font-size:12px}.subtitle{letter-spacing:1px}}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div class="hud">
+ <div class="top">
+  <div><div class="brand">BAUNI <span>VESPER</span></div><div class="subtitle">TINY HEIGHT. HUGE RAGE.</div></div>
+  <div class="panel">
+   <div class="label">VESPER · HP</div><div class="bar"><div class="fill" id="hp"></div></div>
+   <div class="label">ULTIMATE CHARGE</div><div class="bar"><div class="fill energy" id="energy" style="width:0%"></div></div>
+   <div class="stats">KILLS: <span id="kills">0</span> &nbsp; WAVE: <span id="wave">1</span></div>
+  </div>
+ </div>
+ <div class="bottom">
+  <div class="controls"><kbd>WASD</kbd> Move &nbsp; <kbd>SPACE</kbd> Attack<br><kbd>SHIFT</kbd> Dash &nbsp; <kbd>Q</kbd> Ultimate</div>
+  <div class="hint">Defeat enemies. Don't test her patience.</div>
+ </div>
+</div>
+<div id="dialogue"></div><div id="toast"></div>
+<div class="overlay" id="start">
+ <div class="card">
+  <div class="subtitle">A CHAOTIC LITTLE ACTION GAME</div>
+  <h1>BAUNI<br><em>VESPER</em></h1>
+  <p>She's short, she's furious, and she has absolutely no patience.<br>Survive the enemy waves and unleash her ultimate.</p>
+  <div class="btnrow"><button id="startBtn">ENTER THE RAGE</button><button class="secondary" id="musicBtn">♫ MUSIC: ON</button></div>
+  <p class="small">Background synth music starts after you press Enter. Best on desktop with keyboard.</p>
+ </div>
+</div>
+<div class="overlay hide" id="end">
+ <div class="card"><div class="subtitle">VESPER HAS HAD ENOUGH</div><h1><em>GAME OVER</em></h1><p id="result">Kills: 0</p><p>“Mujhe chhota samjha tha? Galti tumhari.”</p><div class="btnrow"><button id="restartBtn">RUN IT BACK</button></div></div>
+</div>
+<script>
+(() => {
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+let W=innerWidth,H=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
+function resize(){W=innerWidth;H=innerHeight;canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0)}
+addEventListener('resize',resize);resize();
+const keys={};addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();keys[e.code]=true;if(!e.repeat){if(e.code==='Space')attack();if(e.code==='KeyQ')ultimate();if(e.code==='ShiftLeft'||e.code==='ShiftRight')dash();}});addEventListener('keyup',e=>keys[e.code]=false);
+const $=id=>document.getElementById(id);
+let running=false,player,enemies=[],particles=[],kills=0,wave=1,spawnTimer=0,shake=0,dialogueTimer=0,toastTimer=0,musicOn=true,audio=null,musicTimer=null;
+const lines={hurt:['SUBKO MARUNGI!','AAG LAGA DUNGI!','AAH— AB TERI KHAIR NAHI!'],kill:['AAGYA NA AUKAT PE!','NEXT! KAUN HAI?','BOLA THA NA, MUJHSE MAT ULJH!'],ult:['BAUNI HU, KAMJOR NAI!']};
+function say(text,time=1.5){$('dialogue').textContent=text;$('dialogue').style.opacity=1;dialogueTimer=time}
+function toast(text){$('toast').textContent=text;$('toast').style.opacity=1;toastTimer=1.3}
+function startMusic(){
+ if(!musicOn||audio)return;
+ try{audio=new (window.AudioContext||window.webkitAudioContext)();let master=audio.createGain();master.gain.value=.07;master.connect(audio.destination);
+ // Synthesized looping neon arcade music: no external files required.
+ const notes=[110,146.83,164.81,220,164.81,146.83,123.47,164.81],bass=[55,55,73.42,73.42,61.74,61.74,82.41,82.41];let step=0;
+ function beat(){if(!audio||!musicOn)return;let t=audio.currentTime;
+  let osc=audio.createOscillator(),g=audio.createGain();osc.type='triangle';osc.frequency.value=notes[step%notes.length];g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.12,t+.025);g.gain.exponentialRampToValueAtTime(.0001,t+.27);osc.connect(g);g.connect(master);osc.start(t);osc.stop(t+.29);
+  let b=audio.createOscillator(),bg=audio.createGain();b.type='sawtooth';b.frequency.value=bass[step%bass.length];bg.gain.setValueAtTime(.0001,t);bg.gain.exponentialRampToValueAtTime(.08,t+.02);bg.gain.exponentialRampToValueAtTime(.0001,t+.23);b.connect(bg);bg.connect(master);b.start(t);b.stop(t+.25);
+  if(step%2===0){let n=audio.createOscillator(),ng=audio.createGain();n.type='square';n.frequency.value=880+(step%4)*110;ng.gain.setValueAtTime(.0001,t);ng.gain.exponentialRampToValueAtTime(.025,t+.005);ng.gain.exponentialRampToValueAtTime(.0001,t+.06);n.connect(ng);ng.connect(master);n.start(t);n.stop(t+.07)}
+  step++;musicTimer=setTimeout(beat,260);
+ }beat();
+ }catch(e){toast('Music not supported in this browser')}
+}
+function stopMusic(){if(musicTimer)clearTimeout(musicTimer);musicTimer=null;if(audio){audio.close();audio=null}}
+$('musicBtn').onclick=()=>{musicOn=!musicOn;$('musicBtn').textContent='♫ MUSIC: '+(musicOn?'ON':'OFF');if(musicOn)startMusic();else stopMusic()};
+function reset(){player={x:W/2,y:H/2,r:13,hp:100,maxHp:100,energy:0,face:1,attack:0,dash:0,invuln:0};enemies=[];particles=[];kills=0;wave=1;spawnTimer=.5;shake=0;updateHUD();say('CHALO, AB SHURU HO!',1.4)}
+$('startBtn').onclick=()=>{$('start').classList.add('hide');$('end').classList.add('hide');reset();running=true;startMusic()};
+$('restartBtn').onclick=()=>{$('end').classList.add('hide');reset();running=true;startMusic()};
+function updateHUD(){$('hp').style.width=Math.max(0,player.hp/player.maxHp*100)+'%';$('energy').style.width=player.energy+'%';$('kills').textContent=kills;$('wave').textContent=wave}
+function spawn(){let side=Math.floor(Math.random()*4),x=side===0?-20:side===1?W+20:Math.random()*W,y=side===2?-20:side===3?H+20:Math.random()*H;enemies.push({x,y,r:12+Math.random()*4,hp:2+Math.floor(wave/3),speed:38+Math.random()*18+wave*2,hit:0})}
+function burst(x,y,color,n=12){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,s=40+Math.random()*190;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.25+Math.random()*.45,max:.7,color,size:2+Math.random()*3})}}
+function attack(){if(!running||!player||player.attack>0)return;player.attack=.23;let hit=0;for(let e of enemies){let dx=e.x-player.x,dy=e.y-player.y,dist=Math.hypot(dx,dy);if(dist<70){e.hp-=2;e.hit=.18;e.x+=dx/(dist||1)*17;e.y+=dy/(dist||1)*17;burst(e.x,e.y,'#ff70b7',5);hit++;if(e.hp<=0){kills++;player.energy=Math.min(100,player.energy+17);burst(e.x,e.y,'#a77bff',16);say(lines.kill[Math.floor(Math.random()*lines.kill.length)],1.2)}}}if(hit===0)toast('MISS! Get closer, genius.');updateHUD()}
+function dash(){if(!running||!player||player.dash>0)return;player.dash=.22;player.invuln=.28;let dx=(keys.KeyD?1:0)-(keys.KeyA?1:0),dy=(keys.KeyS?1:0)-(keys.KeyW?1:0);if(!dx&&!dy)dx=player.face;player.x+=dx*75;player.y+=dy*75;burst(player.x,player.y,'#65f3ff',9)}
+function ultimate(){if(!running||!player||player.energy<100){toast('ULTIMATE NOT READY!');return}player.energy=0;player.invuln=.7;shake=.45;say(lines.ult[0],1.7);burst(player.x,player.y,'#ff4f9a',65);let count=0;for(let e of enemies){if(Math.hypot(e.x-player.x,e.y-player.y)<230){e.hp-=99;burst(e.x,e.y,'#65f3ff',20);if(e.hp<=0){kills++;count++}}}toast('VESPER NOVA · '+count+' ENEMIES WIPED');updateHUD()}
+function update(dt){if(!running)return;dt=Math.min(dt,.04);let dx=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0),dy=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);let len=Math.hypot(dx,dy)||1;player.x+=dx/len*180*dt;player.y+=dy/len*180*dt;if(dx)player.face=Math.sign(dx);player.x=Math.max(20,Math.min(W-20,player.x));player.y=Math.max(50,Math.min(H-35,player.y));player.attack=Math.max(0,player.attack-dt);player.dash=Math.max(0,player.dash-dt);player.invuln=Math.max(0,player.invuln-dt);
+ spawnTimer-=dt;if(spawnTimer<=0){spawn();spawnTimer=Math.max(.45,1.45-wave*.07);if(kills>0&&kills%8===0)wave=Math.floor(kills/8)+1}
+ for(let e of enemies){let ex=player.x-e.x,ey=player.y-e.y,d=Math.hypot(ex,ey)||1;e.x+=ex/d*e.speed*dt;e.y+=ey/d*e.speed*dt;if(e.hit>0)e.hit-=dt;if(d<player.r+e.r+2&&player.invuln<=0){player.hp-=17*dt;if(Math.random()<dt*2){say(lines.hurt[Math.floor(Math.random()*lines.hurt.length)],.8);burst(player.x,player.y,'#ff477e',4)}if(player.hp<=0){player.hp=0;running=false;$('result').textContent='Enemies defeated: '+kills+' · Wave reached: '+wave;$('end').classList.remove('hide');stopMusic()}}}
+ enemies=enemies.filter(e=>e.hp>0);particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.life-=dt});particles=particles.filter(p=>p.life>0);if(shake>0)shake-=dt;if(dialogueTimer>0){dialogueTimer-=dt;if(dialogueTimer<=0)$('dialogue').style.opacity=0}if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('toast').style.opacity=0}updateHUD()}
+function draw(){ctx.save();if(shake>0)ctx.translate((Math.random()-.5)*10,(Math.random()-.5)*10);
+ ctx.clearRect(-20,-20,W+40,H+40);
+ let grd=ctx.createRadialGradient(W*.5,H*.4,10,W*.5,H*.5,Math.max(W,H));grd.addColorStop(0,'#21103d');grd.addColorStop(1,'#070713');ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+ // neon grid and floating stars
+ ctx.lineWidth=1;ctx.strokeStyle='#b18aff12';for(let x=0;x<W;x+=42){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=42){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ for(let i=0;i<35;i++){let x=(i*173+performance.now()*.008)%W,y=(i*97)%H;ctx.fillStyle=i%3===0?'#ff8bc7':'#8d7dff';ctx.globalAlpha=.15+.2*Math.sin(performance.now()*.001+i);ctx.fillRect(x,y,2,2)}ctx.globalAlpha=1;
+ // enemies
+ for(let e of enemies){ctx.save();ctx.translate(e.x,e.y);ctx.shadowBlur=18;ctx.shadowColor=e.hit>0?'#fff':'#ff477e';ctx.fillStyle=e.hit>0?'#fff':'#6c254f';ctx.strokeStyle='#ff6da9';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,e.r,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.fillRect(-5,-3,3,3);ctx.fillRect(3,-3,3,3);ctx.strokeStyle='#ffb3d7';ctx.beginPath();ctx.moveTo(-4,5);ctx.lineTo(4,5);ctx.stroke();ctx.restore()}
+ // Vesper: short, angry, purple hair, oversized jacket
+ if(player){ctx.save();ctx.translate(player.x,player.y);if(player.invuln>0&&Math.floor(performance.now()/60)%2===0)ctx.globalAlpha=.5;
+ ctx.shadowColor='#ff4f9a';ctx.shadowBlur=player.attack>0?28:14;
+ // attack ring
+ if(player.attack>0){ctx.strokeStyle='#ff8fc7';ctx.lineWidth=4;ctx.globalAlpha=.7;ctx.beginPath();ctx.arc(0,0,48,Math.PI*-.8,Math.PI*.8);ctx.stroke();ctx.globalAlpha=1}
+ // legs
+ ctx.shadowBlur=0;ctx.strokeStyle='#17142d';ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-5,10);ctx.lineTo(-7,20);ctx.moveTo(5,10);ctx.lineTo(8,20);ctx.stroke();
+ // body
+ ctx.fillStyle='#28213f';ctx.strokeStyle='#ff72b4';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(-13,-8,26,24,6);ctx.fill();ctx.stroke();
+ // jacket details
+ ctx.strokeStyle='#a88bff';ctx.beginPath();ctx.moveTo(0,-5);ctx.lineTo(0,13);ctx.stroke();ctx.fillStyle='#ff4f9a';ctx.fillRect(-11,0,4,7);
+ // head
+ ctx.fillStyle='#f3c6b6';ctx.beginPath();ctx.arc(0,-17,11,0,Math.PI*2);ctx.fill();
+ // hair fringe and side bob
+ ctx.fillStyle='#7b49c8';ctx.beginPath();ctx.arc(0,-20,12,Math.PI,Math.PI*2);ctx.lineTo(12,-10);ctx.lineTo(7,-15);ctx.lineTo(1,-9);ctx.lineTo(-2,-16);ctx.lineTo(-10,-11);ctx.closePath();ctx.fill();
+ // angry brows
+ ctx.strokeStyle='#351b4e';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-7,-19);ctx.lineTo(-2,-17);ctx.moveTo(2,-17);ctx.lineTo(7,-19);ctx.stroke();
+ ctx.fillStyle='#391a45';ctx.fillRect(-5,-16,2,3);ctx.fillRect(3,-16,2,3);
+ // angry mouth
+ ctx.strokeStyle='#8f365d';ctx.beginPath();ctx.moveTo(-3,-10);ctx.lineTo(3,-11);ctx.stroke();
+ // small height aura label
+ ctx.font='800 10px Orbitron';ctx.textAlign='center';ctx.fillStyle='#ffb1d5';ctx.fillText('VESPER',0,-39);
+ ctx.restore()}
+ for(let p of particles){ctx.globalAlpha=Math.max(0,p.life/.7);ctx.fillStyle=p.color;ctx.shadowBlur=10;ctx.shadowColor=p.color;ctx.fillRect(p.x,p.y,p.size,p.size)}ctx.globalAlpha=1;ctx.shadowBlur=0;
+ // Ultimate ready indicator
+ if(player&&player.energy>=100){ctx.fillStyle='#65f3ff';ctx.font='800 12px Orbitron';ctx.textAlign='center';ctx.fillText('Q · ULTIMATE READY',W/2,30)}
+ ctx.restore()}
+let last=performance.now();function loop(now){let dt=(now-last)/1000;last=now;update(dt);draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
